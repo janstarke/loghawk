@@ -42,6 +42,14 @@ impl App {
         self.running = false;
     }
 
+    pub fn forward(&mut self, steps: usize) {
+        self.viewstate.set_offset(usize::min(*self.viewstate().offset() + steps, self.data().len()));
+    }
+
+    pub fn backward(&mut self, steps: usize){
+        self.viewstate.set_offset(usize::max(*self.viewstate.offset(), steps) - steps);
+    }
+
     pub fn csv_contents(&self) -> CsvView {
         CsvView::from(&self.data)
     }

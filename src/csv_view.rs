@@ -1,3 +1,4 @@
+use getset::{Getters, Setters};
 use ratatui::{
     layout::{Constraint, Layout},
     widgets::{List, StatefulWidget},
@@ -9,7 +10,8 @@ pub struct CsvView<'d> {
     data: &'d CsvData,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, Getters, Setters)]
+#[getset(get="pub", set="pub")]
 pub struct CsvViewState {
     offset: usize,
 }

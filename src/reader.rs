@@ -43,6 +43,12 @@ impl CsvData {
     pub fn window(&self, first: usize, count: usize) -> impl Iterator<Item = &StringRecord> {
         self.records[first..first + count].iter()
     }
+    pub fn len(&self) -> usize {
+        self.records.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.records.is_empty()
+    }
 }
 
 impl TryFrom<&ClioPath> for CsvData {
