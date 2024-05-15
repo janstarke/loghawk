@@ -41,7 +41,8 @@ impl CsvData {
     }
 
     pub fn window(&self, first: usize, count: usize) -> impl Iterator<Item = &StringRecord> {
-        self.records[first..first + count].iter()
+        let upper_bound = usize::min(self.records.len(), first + count);
+        self.records[first..upper_bound].iter()
     }
     pub fn len(&self) -> usize {
         self.records.len()
