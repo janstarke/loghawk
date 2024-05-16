@@ -14,5 +14,6 @@ pub mod tui;
 pub mod handler;
 
 pub mod cli;
-mod reader;
+mod csv_data;
+mod csv_reader;
 mod csv_view;

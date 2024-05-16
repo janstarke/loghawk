@@ -14,12 +14,23 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
                 app.quit();
             }
         }
-        // Counter handlers
         KeyCode::Down => {
             app.forward(1);
         }
         KeyCode::Up => {
             app.backward(1);
+        }
+        KeyCode::PageDown => {
+            app.forward((app.page_size() / 2).into());
+        }
+        KeyCode::PageUp => {
+            app.backward((app.page_size() / 2).into());
+        }
+        KeyCode::Char('G') => {
+            app.end();
+        }
+        KeyCode::Char('g') => {
+            app.begin();
         }
         // Other handlers you could add here.
         _ => {}

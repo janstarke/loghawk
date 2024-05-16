@@ -4,14 +4,14 @@ use ratatui::{
     widgets::{List, StatefulWidget},
 };
 
-use crate::reader::CsvData;
+use crate::csv_data::CsvData;
 
 pub struct CsvView<'d> {
     data: &'d CsvData,
 }
 
 #[derive(Debug, Default, Clone, Copy, Getters, Setters)]
-#[getset(get="pub", set="pub")]
+#[getset(get = "pub", set = "pub")]
 pub struct CsvViewState {
     offset: usize,
 }
@@ -45,7 +45,11 @@ impl<'d> StatefulWidget for CsvView<'d> {
                 }
             })
             .unzip();
-        let parts = Layout::horizontal(vec![Constraint::Min(1), Constraint::Min(1)]).split(area);
+        let parts = Layout::horizontal(vec![
+            Constraint::Length(*self.data.column_length(0).unwrap_or(&10) as u16),
+            Constraint::Min(1),
+        ])
+        .split(area);
 
         let first_column = List::new(first);
         ratatui::widgets::Widget::render(first_column, parts[0], buf);

@@ -1,15 +1,15 @@
 use std::error;
 
-use getset::Getters;
+use getset::{Getters, Setters};
 
-use crate::{cli::Cli, csv_view::{CsvView, CsvViewState}, reader::CsvData};
+use crate::{cli::Cli, csv_view::{CsvView, CsvViewState}, csv_data::CsvData};
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 /// Application.
-#[derive(Debug, Getters)]
-#[getset(get = "pub")]
+#[derive(Debug, Getters, Setters)]
+#[getset(get = "pub", set="pub")]
 pub struct App {
     /// Is the application running?
     running: bool,
@@ -18,7 +18,9 @@ pub struct App {
 
     data: CsvData,
 
-    viewstate: CsvViewState
+    viewstate: CsvViewState,
+
+    page_size: u16
 }
 
 impl App {
@@ -30,7 +32,8 @@ impl App {
             running: true,
             cli,
             data,
-            viewstate
+            viewstate,
+            page_size: 1
         })
     }
 
@@ -43,11 +46,23 @@ impl App {
     }
 
     pub fn forward(&mut self, steps: usize) {
-        self.viewstate.set_offset(usize::min(*self.viewstate().offset() + steps, self.data().len()));
+        if ! self.data().is_empty() {
+            self.viewstate.set_offset(usize::min(*self.viewstate().offset() + steps, self.data().len()-1));
+        }
     }
 
     pub fn backward(&mut self, steps: usize){
         self.viewstate.set_offset(usize::max(*self.viewstate.offset(), steps) - steps);
+    }
+
+    pub fn begin(&mut self) {
+        self.viewstate.set_offset(0);
+    }
+
+    pub fn end(&mut self) {
+        if ! self.data().is_empty() {
+            self.viewstate.set_offset(self.data().len()-1);
+        }
     }
 
     pub fn csv_contents(&self) -> CsvView {

@@ -1,38 +1,12 @@
-use std::{
-    fmt::Debug, fs::File, io::{stdin, Read, Stdin}
-};
-
 use clio::ClioPath;
 use csv::StringRecord;
+use std::fmt::Debug;
 
-pub enum CsvReader {
-    Stdin(Stdin),
-    File(File),
-}
-
-impl Read for CsvReader {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        match self {
-            CsvReader::Stdin(r) => r.read(buf),
-            CsvReader::File(r) => r.read(buf),
-        }
-    }
-}
-
-impl TryFrom<&ClioPath> for CsvReader {
-    type Error = anyhow::Error;
-
-    fn try_from(input: &ClioPath) -> Result<Self, Self::Error> {
-        if input.is_std() {
-            Ok(Self::Stdin(stdin()))
-        } else {
-            Ok(Self::File(File::open(input.path())?))
-        }
-    }
-}
+use crate::csv_reader::CsvReader;
 
 pub struct CsvData {
     records: Vec<StringRecord>,
+    column_lengths: Vec<usize>,
 }
 
 impl CsvData {
@@ -50,6 +24,9 @@ impl CsvData {
     pub fn is_empty(&self) -> bool {
         self.records.is_empty()
     }
+    pub fn column_length(&self, col_idx: usize) -> Option<&usize> {
+        self.column_lengths.get(col_idx)
+    }
 }
 
 impl TryFrom<&ClioPath> for CsvData {
@@ -58,15 +35,30 @@ impl TryFrom<&ClioPath> for CsvData {
     fn try_from(path: &ClioPath) -> Result<Self, Self::Error> {
         let mut reader = csv::Reader::from_reader(CsvReader::try_from(path)?);
         let mut records = Vec::new();
+        let mut column_lengths = Vec::new();
         for record in reader.records() {
-            records.push(record?);
+            let record = record?;
+
+            if column_lengths.is_empty() {
+                column_lengths = vec![0; record.iter().count()];
+            } else {
+                for (idx, s) in record.iter().enumerate() {
+                    column_lengths[idx] = usize::max(column_lengths[idx], s.len());
+                }
+            }
+            records.push(record);
         }
-        Ok(Self { records })
+        Ok(Self {
+            records,
+            column_lengths,
+        })
     }
 }
 
 impl Debug for CsvData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CsvData").field("records", &self.records.len()).finish_non_exhaustive()
+        f.debug_struct("CsvData")
+            .field("records", &self.records.len())
+            .finish_non_exhaustive()
     }
 }
