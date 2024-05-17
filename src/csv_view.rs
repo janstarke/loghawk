@@ -1,7 +1,7 @@
 use getset::{Getters, Setters};
 use ratatui::{
     layout::{Constraint, Layout},
-    widgets::{List, StatefulWidget},
+    widgets::{Block, BorderType, Borders, List, StatefulWidget},
 };
 
 use crate::csv_data::CsvData;
@@ -13,7 +13,8 @@ pub struct CsvView<'d> {
 #[derive(Debug, Default, Clone, Copy, Getters, Setters)]
 #[getset(get = "pub", set = "pub")]
 pub struct CsvViewState {
-    offset: usize,
+    vscroll_offset: usize,
+    hscroll_offset: usize,
 }
 
 impl<'d> From<&'d CsvData> for CsvView<'d> {
@@ -33,7 +34,7 @@ impl<'d> StatefulWidget for CsvView<'d> {
     ) {
         let (first, remaining): (Vec<_>, Vec<_>) = self
             .data
-            .window(state.offset, area.height as usize)
+            .window(state.vscroll_offset, area.height as usize)
             .filter_map(|record| {
                 let mut iter = record.iter();
                 match iter.next() {
@@ -51,10 +52,23 @@ impl<'d> StatefulWidget for CsvView<'d> {
         ])
         .split(area);
 
-        let first_column = List::new(first);
+        let first_column = List::new(first).block(
+            Block::new()
+                .borders(Borders::RIGHT)
+                .border_type(BorderType::Rounded),
+        );
         ratatui::widgets::Widget::render(first_column, parts[0], buf);
 
-        let remaining_column = List::new(remaining.into_iter().map(|r| r.join("|")));
-        ratatui::widgets::Widget::render(remaining_column, parts[1], buf)
+        let remaining_contents = remaining.into_iter().map(|r| {
+            let s = r.join(",").to_string();
+            if state.hscroll_offset() >= &s.len() {
+                String::default()
+            } else {
+                s[*state.hscroll_offset()..].to_string()
+            }
+        });
+        let remaining_column = List::new(remaining_contents);
+        let mut target_area = parts[1];
+        ratatui::widgets::Widget::render(remaining_column, target_area, buf)
     }
 }

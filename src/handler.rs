@@ -20,6 +20,12 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App) -> AppResult<()> {
         KeyCode::Up => {
             app.backward(1);
         }
+        KeyCode::Right => {
+            app.right(8);
+        }
+        KeyCode::Left => {
+            app.left(8);
+        }
         KeyCode::PageDown => {
             app.forward((app.page_size() / 2).into());
         }
