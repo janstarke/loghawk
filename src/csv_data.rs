@@ -1,5 +1,6 @@
 use clio::ClioPath;
 use csv::StringRecord;
+use ratatui::widgets::{Cell, Row};
 use std::fmt::Debug;
 
 use crate::csv_reader::CsvReader;
@@ -14,10 +15,24 @@ impl CsvData {
         self.records.iter()
     }
 
-    pub fn window(&self, first: usize, count: usize) -> impl Iterator<Item = &StringRecord> {
+    pub fn rows(&self) -> impl Iterator<Item = Row<'_>> {
+        self.records
+            .iter()
+            .map(|r| Row::new(r.iter().map(Cell::new)))
+    }
+
+    pub fn record_window(&self, first: usize, count: usize) -> impl Iterator<Item = &StringRecord> {
         let upper_bound = usize::min(self.records.len(), first + count);
         self.records[first..upper_bound].iter()
     }
+
+    pub fn row_window(&self, first: usize, count: usize) -> impl Iterator<Item = Row<'_>> {
+        let upper_bound = usize::min(self.records.len(), first + count);
+        self.records[first..upper_bound]
+            .iter()
+            .map(|r| Row::new(r.iter().map(Cell::new)))
+    }
+
     pub fn len(&self) -> usize {
         self.records.len()
     }
@@ -26,6 +41,9 @@ impl CsvData {
     }
     pub fn column_length(&self, col_idx: usize) -> Option<&usize> {
         self.column_lengths.get(col_idx)
+    }
+    pub fn column_lengths(&self) -> impl Iterator<Item = &usize> {
+        self.column_lengths.iter()
     }
 }
 

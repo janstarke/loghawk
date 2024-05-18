@@ -1,8 +1,5 @@
 use getset::{Getters, Setters};
-use ratatui::{
-    layout::{Constraint, Layout},
-    widgets::{Block, BorderType, Borders, List, StatefulWidget},
-};
+use ratatui::widgets::{Block, BorderType, Borders, StatefulWidget, Table};
 
 use crate::csv_data::CsvData;
 
@@ -32,43 +29,17 @@ impl<'d> StatefulWidget for CsvView<'d> {
         buf: &mut ratatui::prelude::Buffer,
         state: &mut Self::State,
     ) {
-        let (first, remaining): (Vec<_>, Vec<_>) = self
-            .data
-            .window(state.vscroll_offset, area.height as usize)
-            .filter_map(|record| {
-                let mut iter = record.iter();
-                match iter.next() {
-                    Some(first) => {
-                        let remaining: Vec<_> = iter.collect();
-                        Some((first, remaining))
-                    }
-                    None => None,
-                }
-            })
-            .unzip();
-        let parts = Layout::horizontal(vec![
-            Constraint::Length(*self.data.column_length(0).unwrap_or(&10) as u16),
-            Constraint::Min(1),
-        ])
-        .split(area);
-
-        let first_column = List::new(first).block(
+        let table = Table::new(
+            self.data
+                .row_window(state.vscroll_offset, area.height as usize),
+            self.data.column_lengths().map(|s| *s as u16),
+        )
+        .block(
             Block::new()
                 .borders(Borders::RIGHT)
                 .border_type(BorderType::Rounded),
         );
-        ratatui::widgets::Widget::render(first_column, parts[0], buf);
 
-        let remaining_contents = remaining.into_iter().map(|r| {
-            let s = r.join(",").to_string();
-            if state.hscroll_offset() >= &s.len() {
-                String::default()
-            } else {
-                s[*state.hscroll_offset()..].to_string()
-            }
-        });
-        let remaining_column = List::new(remaining_contents);
-        let mut target_area = parts[1];
-        ratatui::widgets::Widget::render(remaining_column, target_area, buf)
+        ratatui::widgets::Widget::render(table, area, buf);
     }
 }
