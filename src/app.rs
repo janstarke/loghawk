@@ -30,7 +30,7 @@ pub struct App {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(cli: Cli) -> anyhow::Result<Self> {
-        let data = CsvData::try_from(cli.csv_file().path())?;
+        let data = CsvData::try_from(cli.file().path())?;
         let viewstate = CsvViewState::default();
         Ok(Self {
             running: true,

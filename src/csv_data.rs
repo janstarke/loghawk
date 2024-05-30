@@ -3,7 +3,7 @@ use csv::StringRecord;
 use ratatui::widgets::{Cell, Row};
 use std::fmt::Debug;
 
-use crate::csv_reader::CsvReader;
+use crate::InputReader;
 
 pub struct CsvData {
     records: Vec<StringRecord>,
@@ -51,7 +51,7 @@ impl TryFrom<&ClioPath> for CsvData {
     type Error = anyhow::Error;
 
     fn try_from(path: &ClioPath) -> Result<Self, Self::Error> {
-        let mut reader = csv::Reader::from_reader(CsvReader::try_from(path)?);
+        let mut reader = csv::Reader::from_reader(InputReader::try_from(path)?);
         let mut records = Vec::new();
         let mut column_lengths = Vec::new();
         for record in reader.records() {

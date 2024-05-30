@@ -4,21 +4,21 @@ use std::{
 
 use clio::ClioPath;
 
-pub enum CsvReader {
+pub enum InputReader {
     Stdin(Stdin),
     File(File),
 }
 
-impl Read for CsvReader {
+impl Read for InputReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         match self {
-            CsvReader::Stdin(r) => r.read(buf),
-            CsvReader::File(r) => r.read(buf),
+            InputReader::Stdin(r) => r.read(buf),
+            InputReader::File(r) => r.read(buf),
         }
     }
 }
 
-impl TryFrom<&ClioPath> for CsvReader {
+impl TryFrom<&ClioPath> for InputReader {
     type Error = anyhow::Error;
 
     fn try_from(input: &ClioPath) -> Result<Self, Self::Error> {

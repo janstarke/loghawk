@@ -15,5 +15,7 @@ pub mod handler;
 
 pub mod cli;
 mod csv_data;
-mod csv_reader;
+mod input_reader;
 mod csv_view;
+
+pub use input_reader::*;
