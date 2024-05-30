@@ -3,47 +3,38 @@ use csv::StringRecord;
 use ratatui::widgets::{Cell, Row};
 use std::fmt::Debug;
 
-use crate::InputReader;
+use crate::{ColumnInfo, ColumnWidth, InputReader, LogData};
 
 pub struct CsvData {
     records: Vec<StringRecord>,
-    column_lengths: Vec<usize>,
+    columns: Vec<ColumnInfo>,
 }
 
-impl CsvData {
-    pub fn records(&self) -> impl Iterator<Item = &StringRecord> {
-        self.records.iter()
+impl LogData for CsvData {
+    fn columns(&self) -> usize {
+        self.columns.len()
     }
 
-    pub fn rows(&self) -> impl Iterator<Item = Row<'_>> {
-        self.records
-            .iter()
-            .map(|r| Row::new(r.iter().map(Cell::new)))
+    fn column_info(&self, idx: usize) -> Option<&ColumnInfo> {
+        self.columns.get(idx)
     }
 
-    pub fn record_window(&self, first: usize, count: usize) -> impl Iterator<Item = &StringRecord> {
-        let upper_bound = usize::min(self.records.len(), first + count);
-        self.records[first..upper_bound].iter()
-    }
-
-    pub fn row_window(&self, first: usize, count: usize) -> impl Iterator<Item = Row<'_>> {
+    fn rows(&self, first: usize, count: usize) -> impl Iterator<Item = Row<'_>> {
         let upper_bound = usize::min(self.records.len(), first + count);
         self.records[first..upper_bound]
             .iter()
             .map(|r| Row::new(r.iter().map(Cell::new)))
     }
 
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.records.len()
     }
-    pub fn is_empty(&self) -> bool {
+    fn is_empty(&self) -> bool {
         self.records.is_empty()
     }
-    pub fn column_length(&self, col_idx: usize) -> Option<&usize> {
-        self.column_lengths.get(col_idx)
-    }
-    pub fn column_lengths(&self) -> impl Iterator<Item = &usize> {
-        self.column_lengths.iter()
+
+    fn iter_columns(&self) -> impl Iterator<Item = &ColumnInfo> {
+        self.columns.iter()
     }
 }
 
@@ -53,23 +44,23 @@ impl TryFrom<&ClioPath> for CsvData {
     fn try_from(path: &ClioPath) -> Result<Self, Self::Error> {
         let mut reader = csv::Reader::from_reader(InputReader::try_from(path)?);
         let mut records = Vec::new();
-        let mut column_lengths = Vec::new();
+        let mut columns = Vec::new();
         for record in reader.records() {
             let record = record?;
 
-            if column_lengths.is_empty() {
-                column_lengths = vec![0; record.iter().count()];
+            if columns.is_empty() {
+                columns = vec![ColumnWidth::Width(0); record.iter().count()];
             } else {
                 for (idx, s) in record.iter().enumerate() {
-                    column_lengths[idx] = usize::max(column_lengths[idx], s.len());
+                    columns[idx].advance_to(s.len());
                 }
             }
             records.push(record);
         }
-        Ok(Self {
-            records,
-            column_lengths,
-        })
+
+        let columns = columns.into_iter().map(ColumnInfo::new).collect();
+
+        Ok(Self { records, columns })
     }
 }
 

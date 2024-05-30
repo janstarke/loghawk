@@ -1,7 +1,7 @@
 use getset::{Getters, Setters};
 use ratatui::widgets::{Block, BorderType, Borders, StatefulWidget, Table};
 
-use crate::csv_data::CsvData;
+use crate::{csv_data::CsvData, LogData};
 
 pub struct CsvView<'d> {
     data: &'d CsvData,
@@ -30,9 +30,8 @@ impl<'d> StatefulWidget for CsvView<'d> {
         state: &mut Self::State,
     ) {
         let table = Table::new(
-            self.data
-                .row_window(state.vscroll_offset, area.height as usize),
-            self.data.column_lengths().map(|s| *s as u16),
+            self.data.rows(state.vscroll_offset, area.height as usize),
+            self.data.iter_columns().map(|c| u16::try_from(*c.width()).unwrap()),
         )
         .block(
             Block::new()

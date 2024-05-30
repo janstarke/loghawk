@@ -6,6 +6,7 @@ use crate::{
     cli::Cli,
     csv_data::CsvData,
     csv_view::{CsvView, CsvViewState},
+    LogData
 };
 
 /// Application result type.
