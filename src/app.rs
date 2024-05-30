@@ -1,11 +1,12 @@
 use std::error;
 
 use getset::{Getters, Setters};
+use ratatui::{layout::Rect, Frame};
 
 use crate::{
     cli::Cli,
     csv_data::CsvData,
-    csv_view::{CsvView, CsvViewState},
+    log_view::{LogView, CsvViewState},
     LogData
 };
 
@@ -87,8 +88,15 @@ impl App {
         }
     }
 
-    pub fn csv_contents(&self) -> CsvView {
-        CsvView::from(&self.data)
+    pub fn render_log_contents(&mut self, frame: &mut Frame, area: Rect) {
+
+        let mut viewstate = *self.csv_viewstate();
+        frame.render_stateful_widget(self.csv_contents(), area, &mut viewstate);
+        self.viewstate = viewstate;
+    }
+
+    pub fn csv_contents(&self) -> LogView<CsvData> {
+        LogView::from(&self.data)
     }
 
     pub fn csv_viewstate(&self) -> &CsvViewState {

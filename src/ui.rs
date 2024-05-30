@@ -11,10 +11,6 @@ pub fn render(app: &mut App, frame: &mut Frame) {
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded);
     app.set_page_size(block.inner(frame.size()).height);
-
-    let contents = app.csv_contents();
-    let mut viewstate = *app.csv_viewstate();
-
-    frame.render_stateful_widget(contents, block.inner(frame.size()), &mut viewstate);
+    app.render_log_contents(frame, block.inner(frame.size()));
     frame.render_widget(block, frame.size());
 }
