@@ -45,9 +45,10 @@ where
         let index_list = List::new(self.data.index_rows(&state.viewport(&index_part)))
             .with_borders(Borders::RIGHT);
 
+        let data_viewport = state.viewport(&data_part);
         let data_table = Table::new(
-            self.data.data_rows(&state.viewport(&data_part)),
-            self.data.data_widths().map(|n| u16::try_from(n).unwrap()).map(Constraint::Min),
+            self.data.data_rows(&data_viewport),
+            self.data.data_widths(&data_viewport).map(|n| u16::try_from(n).unwrap()).map(Constraint::Min),
         )
         .with_borders(Borders::NONE);
 

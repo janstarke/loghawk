@@ -62,7 +62,7 @@ pub trait LogData {
     fn index_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = ListItem<'_>>;
     fn data_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>>;
 
-    fn data_widths(&self) -> impl Iterator<Item = usize> {
+    fn data_widths(&self, _viewport: &ViewPort) -> impl Iterator<Item = usize> {
         self.iter_data_columns()
             .map(|c| usize::try_from(*c.width()).unwrap())
     }
