@@ -1,4 +1,4 @@
-# loghawk
+# LogHawk
 A cli tool to display large CSV files
 
 ![Screenshot of LogHawk](https://github.com/janstarke/loghawk/blob/main/docs/sample.png?raw=true)
