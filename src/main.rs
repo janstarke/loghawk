@@ -1,9 +1,9 @@
 use clap::Parser;
-use laxa::app::{App, AppResult};
-use laxa::cli::Cli;
-use laxa::event::{Event, EventHandler};
-use laxa::handler::handle_key_events;
-use laxa::tui::Tui;
+use loghawk::app::{App, AppResult};
+use loghawk::cli::Cli;
+use loghawk::event::{Event, EventHandler};
+use loghawk::handler::handle_key_events;
+use loghawk::tui::Tui;
 use std::io;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
