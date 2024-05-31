@@ -2,8 +2,11 @@
 name = "loghawk"
 version = "0.1.0"
 authors = ["Jan Starke <jan.starke@posteo.de>"]
-license = "GPL-v3"
+license = "GPL-3.0"
 edition = "2021"
+description = "A cli tool to display large CSV files"
+repository = "https://github.com/janstarke/loghawk"
+
 
 [dependencies]
 crossterm = "0.27.0"
