@@ -10,6 +10,10 @@ The tool is expected to be used by forensics analysts. The idea is that you have
 where you have a *first column* which is important for you, such as as timestamp. The remaining lines
 might be long, so you want to scroll to the right without losing the first column.
 
+### Customizable highlighting
+
+This is still in work. I'm going to have customizable highlighting based on regular expression. At the moment, it is hard coded.
+
 ## Usage
 
 ```
