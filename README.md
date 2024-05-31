@@ -14,6 +14,14 @@ might be long, so you want to scroll to the right without losing the first colum
 
 This is still in work. I'm going to have customizable highlighting based on regular expression. At the moment, it is hard coded.
 
+## Installation
+
+This tool is available via <https://crates.io>; you can install it using
+
+```
+cargo install loghawk
+```
+
 ## Usage
 
 ```
