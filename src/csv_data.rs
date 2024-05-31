@@ -4,7 +4,7 @@ use csv::StringRecord;
 use ratatui::widgets::{Cell, ListItem, Row};
 use std::fmt::Debug;
 
-use crate::{ColumnInfo, ColumnWidth, InputReader, LogData, ViewPort};
+use crate::{ColumnInfo, ColumnWidth, DataRows, DataWidths, IndexRows, InputReader, IterDataColumns, LogData, ViewPort};
 
 pub struct CsvData {
     records: Vec<StringRecord>,
@@ -40,9 +40,9 @@ impl LogData for CsvData {
         self.columns.get(idx + 1)
     }
 
-    fn data_widths(&self, viewport: &ViewPort) -> impl Iterator<Item = usize> {
+    fn data_widths(&self, viewport: &ViewPort) -> DataWidths<'_> {
         let (first_column_index, skip_in_column) = self.find_start(viewport);
-        self.iter_data_columns()
+        DataWidths::from(self.iter_data_columns()
             .skip(first_column_index)
             .map(|c| usize::try_from(*c.width()).unwrap())
             .enumerate()
@@ -56,14 +56,14 @@ impl LogData for CsvData {
                 } else {
                     width
                 }
-            })
+            }))
     }
 
-    fn data_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>> {
+    fn data_rows(&self, viewport: &ViewPort) -> DataRows<'_> {
         let (first_column_index, skip_in_column) = self.find_start(viewport);
 
         let upper_bound = usize::min(self.records.len(), viewport.vend());
-        self.records[viewport.vbegin()..upper_bound]
+        DataRows::from(self.records[viewport.vbegin()..upper_bound]
             .iter()
             .map(move |r| {
                 Row::new(
@@ -82,14 +82,14 @@ impl LogData for CsvData {
                             })
                         }),
                 )
-            })
+            }))
     }
 
-    fn index_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = ListItem<'_>> {
+    fn index_rows(&self, viewport: &ViewPort) -> IndexRows<'_> {
         let upper_bound = usize::min(self.records.len(), viewport.vend());
-        self.records[viewport.vbegin()..upper_bound]
+        IndexRows::from(self.records[viewport.vbegin()..upper_bound]
             .iter()
-            .map(|r| ListItem::new(r.get(0).unwrap_or_default()))
+            .map(|r| ListItem::new(r.get(0).unwrap_or_default())))
     }
 
     fn len(&self) -> usize {
@@ -99,8 +99,8 @@ impl LogData for CsvData {
         self.records.is_empty()
     }
 
-    fn iter_data_columns(&self) -> impl Iterator<Item = &ColumnInfo> {
-        self.columns.iter().skip(1)
+    fn iter_data_columns(&self) -> IterDataColumns<'_> {
+        IterDataColumns::from(self.columns.iter().skip(1))
     }
 
     fn index_info(&self) -> &ColumnInfo {

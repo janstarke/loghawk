@@ -4,25 +4,19 @@ use ratatui::{
 
 use crate::{tui_helper::WithBorders, LogData, LogViewState};
 
-pub struct LogView<'d, D>
-where
-    D: LogData,
+pub struct LogView<'d>
 {
-    data: &'d D,
+    data: &'d dyn LogData,
 }
 
-impl<'d, D> From<&'d D> for LogView<'d, D>
-where
-    D: LogData,
+impl<'d> From<&'d dyn LogData> for LogView<'d>
 {
-    fn from(data: &'d D) -> Self {
+    fn from(data: &'d dyn LogData) -> Self {
         Self { data }
     }
 }
 
-impl<'d, D> StatefulWidget for LogView<'d, D>
-where
-    D: LogData,
+impl<'d> StatefulWidget for LogView<'d>
 {
     type State = LogViewState;
 

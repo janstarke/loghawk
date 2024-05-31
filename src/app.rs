@@ -17,7 +17,7 @@ pub struct App {
 
     cli: Cli,
 
-    data: CsvData,
+    data: Box<dyn LogData>,
 
     viewstate: LogViewState,
 
@@ -27,7 +27,7 @@ pub struct App {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(cli: Cli) -> anyhow::Result<Self> {
-        let data = CsvData::try_from(cli.file().path())?;
+        let data = Box::new(CsvData::try_from(cli.file().path())?);
         let viewstate = LogViewState::default();
         Ok(Self {
             running: true,
@@ -90,12 +90,8 @@ impl App {
 
     pub fn render_log_contents(&mut self, frame: &mut Frame, area: Rect) {
         let mut viewstate = *self.csv_viewstate();
-        frame.render_stateful_widget(self.csv_contents(), area, &mut viewstate);
+        frame.render_stateful_widget(LogView::from(self.data.as_ref()), area, &mut viewstate);
         self.viewstate = viewstate;
-    }
-
-    pub fn csv_contents(&self) -> LogView<CsvData> {
-        LogView::from(&self.data)
     }
 
     pub fn csv_viewstate(&self) -> &LogViewState {
