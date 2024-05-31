@@ -3,12 +3,7 @@ use std::error;
 use getset::{Getters, Setters};
 use ratatui::{layout::Rect, Frame};
 
-use crate::{
-    cli::Cli,
-    csv_data::CsvData,
-    log_view::{LogView, CsvViewState},
-    LogData
-};
+use crate::{cli::Cli, csv_data::CsvData, log_view::LogView, LogData, LogViewState};
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -24,7 +19,7 @@ pub struct App {
 
     data: CsvData,
 
-    viewstate: CsvViewState,
+    viewstate: LogViewState,
 
     page_size: u16,
 }
@@ -33,7 +28,7 @@ impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(cli: Cli) -> anyhow::Result<Self> {
         let data = CsvData::try_from(cli.file().path())?;
-        let viewstate = CsvViewState::default();
+        let viewstate = LogViewState::default();
         Ok(Self {
             running: true,
             cli,
@@ -76,20 +71,20 @@ impl App {
     }
 
     pub fn right(&mut self, steps: usize) {
-        self.viewstate.set_hscroll_offset(self.viewstate.hscroll_offset() + steps);
+        self.viewstate
+            .set_hscroll_offset(self.viewstate.hscroll_offset() + steps);
     }
 
     pub fn left(&mut self, steps: usize) {
-
         if *self.viewstate.hscroll_offset() >= steps {
-            self.viewstate.set_hscroll_offset(self.viewstate.hscroll_offset() - steps);
+            self.viewstate
+                .set_hscroll_offset(self.viewstate.hscroll_offset() - steps);
         } else {
             self.viewstate.set_hscroll_offset(0);
         }
     }
 
     pub fn render_log_contents(&mut self, frame: &mut Frame, area: Rect) {
-
         let mut viewstate = *self.csv_viewstate();
         frame.render_stateful_widget(self.csv_contents(), area, &mut viewstate);
         self.viewstate = viewstate;
@@ -99,7 +94,7 @@ impl App {
         LogView::from(&self.data)
     }
 
-    pub fn csv_viewstate(&self) -> &CsvViewState {
+    pub fn csv_viewstate(&self) -> &LogViewState {
         &self.viewstate
     }
 }

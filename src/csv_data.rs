@@ -1,9 +1,9 @@
 use clio::ClioPath;
 use csv::StringRecord;
-use ratatui::widgets::{Cell, Row};
+use ratatui::widgets::{Cell, ListItem, Row};
 use std::fmt::Debug;
 
-use crate::{ColumnInfo, ColumnWidth, InputReader, LogData};
+use crate::{ColumnInfo, ColumnWidth, InputReader, LogData, ViewPort};
 
 pub struct CsvData {
     records: Vec<StringRecord>,
@@ -19,11 +19,18 @@ impl LogData for CsvData {
         self.columns.get(idx)
     }
 
-    fn rows(&self, first: usize, count: usize) -> impl Iterator<Item = Row<'_>> {
-        let upper_bound = usize::min(self.records.len(), first + count);
-        self.records[first..upper_bound]
+    fn rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>> {
+        let upper_bound = usize::min(self.records.len(), viewport.vend());
+        self.records[viewport.vbegin()..upper_bound]
             .iter()
             .map(|r| Row::new(r.iter().map(Cell::new)))
+    }
+
+    fn index_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = ListItem<'_>> {
+        let upper_bound = usize::min(self.records.len(), viewport.vend());
+        self.records[viewport.vbegin()..upper_bound]
+            .iter()
+            .map(|r| ListItem::new(r.get(0).unwrap_or_default()))
     }
 
     fn len(&self) -> usize {

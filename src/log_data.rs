@@ -1,6 +1,7 @@
 use getset::Getters;
-use ratatui::widgets::Row;
+use ratatui::widgets::{ListItem, Row};
 
+use crate::ViewPort;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ColumnWidth {
@@ -57,5 +58,6 @@ pub trait LogData {
     fn columns(&self) -> usize;
     fn column_info(&self, idx: usize) -> Option<&ColumnInfo>;
     fn iter_columns(&self) -> impl Iterator<Item = &ColumnInfo>;
-    fn rows(&self, first: usize, count: usize) -> impl Iterator<Item = Row<'_>>;
+    fn index_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = ListItem<'_>>;
+    fn rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>>;
 }

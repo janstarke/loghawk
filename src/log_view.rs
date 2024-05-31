@@ -1,22 +1,15 @@
-use getset::{Getters, Setters};
 use ratatui::{
-    layout::Constraint, style::{Style, Stylize}, text::Text, widgets::{Block, BorderType, Borders, StatefulWidget, Table}
+    layout::{Constraint, Layout, Margin},   
+    widgets::{Block, BorderType, Borders, List, StatefulWidget, Table},
 };
 
-use crate::LogData;
+use crate::{LogData, LogViewState};
 
 pub struct LogView<'d, D>
 where
     D: LogData,
 {
     data: &'d D,
-}
-
-#[derive(Debug, Default, Clone, Copy, Getters, Setters)]
-#[getset(get = "pub", set = "pub")]
-pub struct CsvViewState {
-    vscroll_offset: usize,
-    hscroll_offset: usize,
 }
 
 impl<'d, D> From<&'d D> for LogView<'d, D>
@@ -32,7 +25,7 @@ impl<'d, D> StatefulWidget for LogView<'d, D>
 where
     D: LogData,
 {
-    type State = CsvViewState;
+    type State = LogViewState;
 
     fn render(
         self,
@@ -40,17 +33,23 @@ where
         buf: &mut ratatui::prelude::Buffer,
         state: &mut Self::State,
     ) {
+        let margin = Margin::new(0, 0);
         let widths: Vec<_> = self
             .data
             .iter_columns()
             .map(|c| u16::try_from(*c.width()).unwrap())
             .collect();
 
-        let table = Table::new(
-            self.data.rows(state.vscroll_offset, area.height as usize),
+        let index_width = widths.first().unwrap_or(&0) + 2*margin.horizontal + 1; // add 1 to have space for the right border
+
+        let parts = Layout::horizontal(vec![Constraint::Length(index_width), Constraint::Min(1)])
+            .split(area);
+        let index_part = parts[0].inner(&margin);
+        let data_part = parts[1].inner(&margin);
+
+        let index_list = List::new(
             self.data
-                .iter_columns()
-                .map(|c| Constraint::Min(u16::try_from(*c.width()).unwrap())),
+                .index_rows(&state.viewport(&index_part)),
         )
         .block(
             Block::new()
@@ -58,7 +57,19 @@ where
                 .border_type(BorderType::Rounded),
         );
 
-        ratatui::widgets::Widget::render(table, area, buf);
-        ratatui::widgets::Widget::render(Text::raw(format!("{widths:?}")), area, buf);
+        let data_table = Table::new(
+            self.data.rows(&state.viewport(&data_part)),
+            self.data
+                .iter_columns()
+                .map(|c| Constraint::Min(u16::try_from(*c.width()).unwrap())),
+        )
+        .block(
+            Block::new()
+                .borders(Borders::NONE)
+                .border_type(BorderType::Rounded),
+        );
+
+        ratatui::widgets::Widget::render(index_list, index_part, buf);
+        ratatui::widgets::Widget::render(data_table, data_part, buf);
     }
 }
