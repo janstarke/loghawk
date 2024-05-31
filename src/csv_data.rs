@@ -1,10 +1,10 @@
 use anyhow::bail;
 use clio::ClioPath;
 use csv::StringRecord;
-use ratatui::widgets::{Cell, ListItem, Row};
+use ratatui::{text::Line, widgets::{Cell, ListItem, Row}};
 use std::fmt::Debug;
 
-use crate::{ColumnInfo, ColumnWidth, DataRows, DataWidths, IndexRows, InputReader, IterDataColumns, LogData, ViewPort};
+use crate::{ColumnInfo, ColumnWidth, DataRows, DataWidths, IndexRows, InputReader, IterDataColumns, LogData, ViewPort, AsMasked};
 
 pub struct CsvData {
     records: Vec<StringRecord>,
@@ -73,12 +73,12 @@ impl LogData for CsvData {
                         .map(|(idx, value)| {
                             Cell::new(if idx == 0 {
                                 if skip_in_column >= value.len() {
-                                    ""
+                                    Line::raw("")
                                 } else {
-                                    &value[skip_in_column..]
+                                    value.as_masked(skip_in_column..)
                                 }
                             } else {
-                                value
+                                value.as_masked(..)
                             })
                         }),
                 )
@@ -89,7 +89,7 @@ impl LogData for CsvData {
         let upper_bound = usize::min(self.records.len(), viewport.vend());
         IndexRows::from(self.records[viewport.vbegin()..upper_bound]
             .iter()
-            .map(|r| ListItem::new(r.get(0).unwrap_or_default())))
+            .map(|r| ListItem::new(r.get(0).unwrap_or_default().as_masked(..))))
     }
 
     fn len(&self) -> usize {

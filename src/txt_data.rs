@@ -1,12 +1,9 @@
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-};
+use std::io::{BufRead, BufReader};
 
-use clio::ClioPath;
-use ratatui::widgets::{Cell, ListItem, Row};
+use clio::{ClioPath, Input};
+use ratatui::{text::Line, widgets::{Cell, ListItem, Row}};
 
-use crate::{ColumnInfo, ColumnWidth, DataRows, IndexRows, IterDataColumns, LogData};
+use crate::{AsMasked, ColumnInfo, ColumnWidth, DataRows, IndexRows, IterDataColumns, LogData};
 
 #[derive(Debug)]
 pub struct TxtData {
@@ -17,18 +14,22 @@ pub struct TxtData {
     contents_info: ColumnInfo,
 }
 
+
 impl TxtData {
     pub fn load_from(path: &ClioPath, delimiter: char) -> anyhow::Result<Self> {
-        let reader = BufReader::new(File::open(path.path())?);
+        let input = Input::new(path.as_os_str())?;
+        let reader = BufReader::new(input);
         let mut indices = Vec::new();
         let mut contents = Vec::new();
         let mut index_width = 0;
         let mut contents_width = 0;
         for line in reader.lines() {
             let line = line?;
+
             if let Some((index, content)) = line.split_once(delimiter) {
                 let index = index.to_string();
                 let content = content.to_string();
+                assert_ne!(content.len(), 17526);
 
                 index_width = usize::max(index.len(), index_width);
                 contents_width = usize::max(content.len(), contents_width);
@@ -86,7 +87,7 @@ impl LogData for TxtData {
         IndexRows::from(
             self.indices[viewport.vbegin()..upper_bound]
                 .iter()
-                .map(|v| ListItem::new(&v[..])),
+                .map(|v| ListItem::new(v.as_masked(..))),
         )
     }
 
@@ -97,11 +98,10 @@ impl LogData for TxtData {
             self.contents[viewport.vbegin()..upper_bound]
                 .iter()
                 .map(move |v| {
-                    Row::new(
-                    vec![Cell::new(if hoffset >= v.len() {
-                        ""
+                    Row::new(vec![Cell::new(if hoffset >= v.len() {
+                        Line::raw("")
                     } else {
-                        &v[hoffset..]
+                        v.as_masked(hoffset..)
                     })])
                 }),
         )

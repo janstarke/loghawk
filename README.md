@@ -1,6 +1,11 @@
 # loghawk
 A cli tool to display large CSV files
 
+
+The tool is expected to be used by forensics analysts. The idea is that you have a file, csv or txt,
+where you have a *first column* which is important for you, such as as timestamp. The remaining lines
+might be long, so you want to scroll to the right without losing the first column.
+
 # Usage
 
 ```

@@ -13,3 +13,4 @@ clio = {version="0.3.5", features=["clap-parse"] }
 getset = "0.1.2"
 anyhow = "1.0.83"
 csv = "1.3.0"
+encoding_rs = "0.8.34"

@@ -21,6 +21,7 @@ mod log_view;
 mod log_view_state;
 mod log_data;
 mod viewport;
+mod as_masked;
 
 pub use csv_data::*;
 pub use txt_data::*;
@@ -28,5 +29,6 @@ pub use input_reader::*;
 pub use log_data::*;
 pub use log_view_state::*;
 pub use viewport::*;
+pub use as_masked::*;
 
 pub mod tui_helper;
