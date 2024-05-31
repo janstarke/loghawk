@@ -40,7 +40,7 @@ impl TryFrom<ColumnWidth> for u16 {
     }
 }
 
-#[derive(Getters)]
+#[derive(Getters, Debug)]
 #[getset(get = "pub")]
 pub struct ColumnInfo {
     width: ColumnWidth,

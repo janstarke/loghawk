@@ -3,7 +3,9 @@ use std::error;
 use getset::{Getters, Setters};
 use ratatui::{layout::Rect, Frame};
 
-use crate::{cli::Cli, csv_data::CsvData, log_view::LogView, LogData, LogViewState, ViewPort};
+use crate::{
+    cli::{Cli, FileFormat}, csv_data::CsvData, log_view::LogView, LogData, LogViewState, TxtData, ViewPort
+};
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -27,7 +29,11 @@ pub struct App {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(cli: Cli) -> anyhow::Result<Self> {
-        let data = Box::new(CsvData::try_from(cli.file().path())?);
+        let data: Box<dyn LogData> = match cli.file_format() {
+            FileFormat::Csv => Box::new(CsvData::try_from(cli.file().path())?),
+            FileFormat::Txt => Box::new(TxtData::load_from(cli.file().path(), *cli.delimiter())?),
+        };
+
         let viewstate = LogViewState::default();
         Ok(Self {
             running: true,
