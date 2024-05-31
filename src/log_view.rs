@@ -1,9 +1,8 @@
 use ratatui::{
-    layout::{Constraint, Layout, Margin},   
-    widgets::{Block, BorderType, Borders, List, StatefulWidget, Table},
+    layout::{Constraint, Layout, Margin}, widgets::{Borders, List, StatefulWidget, Table}
 };
 
-use crate::{LogData, LogViewState};
+use crate::{tui_helper::WithBorders, LogData, LogViewState};
 
 pub struct LogView<'d, D>
 where
@@ -34,40 +33,23 @@ where
         state: &mut Self::State,
     ) {
         let margin = Margin::new(0, 0);
-        let widths: Vec<_> = self
-            .data
-            .iter_columns()
-            .map(|c| u16::try_from(*c.width()).unwrap())
-            .collect();
 
-        let index_width = widths.first().unwrap_or(&0) + 2*margin.horizontal + 1; // add 1 to have space for the right border
+        let index_width =
+            u16::try_from(*self.data.index_info().width()).unwrap() + 2 * margin.horizontal + 1; // add 1 to have space for the right border
 
         let parts = Layout::horizontal(vec![Constraint::Length(index_width), Constraint::Min(1)])
             .split(area);
         let index_part = parts[0].inner(&margin);
         let data_part = parts[1].inner(&margin);
 
-        let index_list = List::new(
-            self.data
-                .index_rows(&state.viewport(&index_part)),
-        )
-        .block(
-            Block::new()
-                .borders(Borders::RIGHT)
-                .border_type(BorderType::Rounded),
-        );
+        let index_list = List::new(self.data.index_rows(&state.viewport(&index_part)))
+            .with_borders(Borders::RIGHT);
 
         let data_table = Table::new(
-            self.data.rows(&state.viewport(&data_part)),
-            self.data
-                .iter_columns()
-                .map(|c| Constraint::Min(u16::try_from(*c.width()).unwrap())),
+            self.data.data_rows(&state.viewport(&data_part)),
+            self.data.data_widths().map(|n| u16::try_from(n).unwrap()).map(Constraint::Min),
         )
-        .block(
-            Block::new()
-                .borders(Borders::NONE)
-                .border_type(BorderType::Rounded),
-        );
+        .with_borders(Borders::NONE);
 
         ratatui::widgets::Widget::render(index_list, index_part, buf);
         ratatui::widgets::Widget::render(data_table, data_part, buf);

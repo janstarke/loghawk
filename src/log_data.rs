@@ -55,9 +55,15 @@ pub trait LogData {
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
 
-    fn columns(&self) -> usize;
-    fn column_info(&self, idx: usize) -> Option<&ColumnInfo>;
-    fn iter_columns(&self) -> impl Iterator<Item = &ColumnInfo>;
+    fn index_info(&self) -> &ColumnInfo;
+    fn data_columns(&self) -> usize;
+    fn data_infos(&self, idx: usize) -> Option<&ColumnInfo>;
+    fn iter_data_columns(&self) -> impl Iterator<Item = &ColumnInfo>;
     fn index_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = ListItem<'_>>;
-    fn rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>>;
+    fn data_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>>;
+
+    fn data_widths(&self) -> impl Iterator<Item = usize> {
+        self.iter_data_columns()
+            .map(|c| usize::try_from(*c.width()).unwrap())
+    }
 }

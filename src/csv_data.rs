@@ -11,19 +11,19 @@ pub struct CsvData {
 }
 
 impl LogData for CsvData {
-    fn columns(&self) -> usize {
+    fn data_columns(&self) -> usize {
         self.columns.len()
     }
 
-    fn column_info(&self, idx: usize) -> Option<&ColumnInfo> {
-        self.columns.get(idx)
+    fn data_infos(&self, idx: usize) -> Option<&ColumnInfo> {
+        self.columns.get(idx + 1)
     }
 
-    fn rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>> {
+    fn data_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = Row<'_>> {
         let upper_bound = usize::min(self.records.len(), viewport.vend());
         self.records[viewport.vbegin()..upper_bound]
             .iter()
-            .map(|r| Row::new(r.iter().map(Cell::new)))
+            .map(|r| Row::new(r.iter().skip(1).map(Cell::new)))
     }
 
     fn index_rows(&self, viewport: &ViewPort) -> impl Iterator<Item = ListItem<'_>> {
@@ -40,8 +40,12 @@ impl LogData for CsvData {
         self.records.is_empty()
     }
 
-    fn iter_columns(&self) -> impl Iterator<Item = &ColumnInfo> {
-        self.columns.iter()
+    fn iter_data_columns(&self) -> impl Iterator<Item = &ColumnInfo> {
+        self.columns.iter().skip(1)
+    }
+    
+    fn index_info(&self) -> &ColumnInfo {
+        self.columns.first().unwrap()
     }
 }
 
