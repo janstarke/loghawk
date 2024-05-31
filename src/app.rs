@@ -3,7 +3,7 @@ use std::error;
 use getset::{Getters, Setters};
 use ratatui::{layout::Rect, Frame};
 
-use crate::{cli::Cli, csv_data::CsvData, log_view::LogView, LogData, LogViewState};
+use crate::{cli::Cli, csv_data::CsvData, log_view::LogView, LogData, LogViewState, ViewPort};
 
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -71,8 +71,12 @@ impl App {
     }
 
     pub fn right(&mut self, steps: usize) {
-        self.viewstate
-            .set_hscroll_offset(self.viewstate.hscroll_offset() + steps);
+        let viewport = ViewPort::new(self.viewstate.hscroll_offset() + steps, 0, 44, 55);
+        let width: usize = self.data.data_widths(&viewport).sum();
+        if width > 0 {
+            self.viewstate
+                .set_hscroll_offset(self.viewstate.hscroll_offset() + steps);
+        }
     }
 
     pub fn left(&mut self, steps: usize) {

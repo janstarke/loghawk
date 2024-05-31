@@ -72,7 +72,11 @@ impl LogData for CsvData {
                         .enumerate()
                         .map(|(idx, value)| {
                             Cell::new(if idx == 0 {
-                                &value[skip_in_column..]
+                                if skip_in_column >= value.len() {
+                                    ""
+                                } else {
+                                    &value[skip_in_column..]
+                                }
                             } else {
                                 value
                             })
