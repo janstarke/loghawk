@@ -1,26 +1,29 @@
 use std::io::{BufRead, BufReader};
 
 use clio::{ClioPath, Input};
-use ratatui::{text::Line, widgets::{Cell, ListItem, Row}};
+use ratatui::{
+    text::Line,
+    widgets::{Cell, ListItem, Row},
+};
 
-use crate::{AsMasked, ColumnInfo, ColumnWidth, DataRows, IndexRows, IterDataColumns, LogData};
+use crate::{
+    log_line::LogLine, AsMasked, ColumnInfo, ColumnWidth, DataRows, IndexRows, IterDataColumns,
+    LogData,
+};
 
 #[derive(Debug)]
 pub struct TxtData {
-    indices: Vec<String>,
-    contents: Vec<String>,
+    lines: Vec<LogLine>,
 
     index_info: ColumnInfo,
     contents_info: ColumnInfo,
 }
 
-
 impl TxtData {
     pub fn load_from(path: &ClioPath, delimiter: char) -> anyhow::Result<Self> {
         let input = Input::new(path.as_os_str())?;
         let reader = BufReader::new(input);
-        let mut indices = Vec::new();
-        let mut contents = Vec::new();
+        let mut lines = Vec::new();
         let mut index_width = 0;
         let mut contents_width = 0;
         for line in reader.lines() {
@@ -29,24 +32,18 @@ impl TxtData {
             if let Some((index, content)) = line.split_once(delimiter) {
                 let index = index.to_string();
                 let content = content.to_string();
-                assert_ne!(content.len(), 17526);
 
                 index_width = usize::max(index.len(), index_width);
                 contents_width = usize::max(content.len(), contents_width);
 
-                indices.push(index);
-                contents.push(content);
+                lines.push(LogLine::new(index, content)?);
             } else {
-                indices.push("".into());
-                contents.push(line);
+                lines.push(LogLine::new("".into(), line)?);
             }
         }
 
-        assert_eq!(indices.len(), contents.len());
-
         Ok(Self {
-            indices,
-            contents,
+            lines,
             index_info: ColumnInfo::new(ColumnWidth::Width(index_width)),
             contents_info: ColumnInfo::new(ColumnWidth::Width(contents_width)),
         })
@@ -55,11 +52,11 @@ impl TxtData {
 
 impl LogData for TxtData {
     fn len(&self) -> usize {
-        self.indices.len()
+        self.lines.len()
     }
 
     fn is_empty(&self) -> bool {
-        self.indices.is_empty()
+        self.lines.is_empty()
     }
 
     fn index_info(&self) -> &crate::ColumnInfo {
@@ -82,26 +79,31 @@ impl LogData for TxtData {
         IterDataColumns::from(vec![&self.contents_info].into_iter())
     }
 
-    fn index_rows(&self, viewport: &crate::ViewPort) -> crate::IndexRows<'_> {
-        let upper_bound = usize::min(self.indices.len(), viewport.vend());
+    fn index_rows(&self, viewport: &crate::ViewPort, mask_unicode: bool) -> crate::IndexRows<'_> {
+        let upper_bound = usize::min(self.lines.len(), viewport.vend());
         IndexRows::from(
-            self.indices[viewport.vbegin()..upper_bound]
+            self.lines[viewport.vbegin()..upper_bound]
                 .iter()
-                .map(|v| ListItem::new(v.as_masked(..))),
+                .map(move |v| ListItem::new(v.key_value().as_masked(.., mask_unicode))),
         )
     }
 
-    fn data_rows(&self, viewport: &crate::ViewPort) -> crate::DataRows<'_> {
-        let upper_bound = usize::min(self.indices.len(), viewport.vend());
+    fn data_rows(&self, viewport: &crate::ViewPort, mask_unicode: bool) -> crate::DataRows<'_> {
+        let upper_bound = usize::min(self.lines.len(), viewport.vend());
         let hoffset = *viewport.hoffset();
         DataRows::from(
-            self.contents[viewport.vbegin()..upper_bound]
+            self.lines[viewport.vbegin()..upper_bound]
                 .iter()
                 .map(move |v| {
-                    Row::new(vec![Cell::new(if hoffset >= v.len() {
-                        Line::raw("")
-                    } else {
-                        v.as_masked(hoffset..)
+                    Row::new(vec![Cell::new(match v.contents(0) {
+                        None => Line::raw(""),
+                        Some(line) => {
+                            if hoffset >= line.len() {
+                                Line::raw("")
+                            } else {
+                                line.as_masked(hoffset.., mask_unicode)
+                            }
+                        }
                     })])
                 }),
         )

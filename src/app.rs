@@ -4,7 +4,10 @@ use getset::{Getters, Setters};
 use ratatui::{layout::Rect, Frame};
 
 use crate::{
-    cli::{Cli, FileFormat}, csv_data::CsvData, log_view::LogView, LogData, LogViewState, TxtData, ViewPort
+    cli::{Cli, FileFormat},
+    csv_data::CsvData,
+    log_view::LogView,
+    LogData, LogViewState, TxtData, ViewPort,
 };
 
 /// Application result type.
@@ -96,7 +99,11 @@ impl App {
 
     pub fn render_log_contents(&mut self, frame: &mut Frame, area: Rect) {
         let mut viewstate = *self.csv_viewstate();
-        frame.render_stateful_widget(LogView::from(self.data.as_ref()), area, &mut viewstate);
+        frame.render_stateful_widget(
+            LogView::from(self.data.as_ref()).with_mask_unicode(*self.cli.mask_unicode()),
+            area,
+            &mut viewstate,
+        );
         self.viewstate = viewstate;
     }
 

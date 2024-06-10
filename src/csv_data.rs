@@ -1,14 +1,23 @@
 use anyhow::bail;
 use clio::ClioPath;
-use csv::StringRecord;
-use ratatui::{text::Line, widgets::{Cell, ListItem, Row}};
+use ratatui::{
+    style::{Color, Stylize},
+    text::Line,
+    widgets::{Cell, ListItem, Row},
+};
 use std::fmt::Debug;
+use tlsh::FuzzyHashType;
+use tlsh::Tlsh;
 
-use crate::{ColumnInfo, ColumnWidth, DataRows, DataWidths, IndexRows, InputReader, IterDataColumns, LogData, ViewPort, AsMasked};
+use crate::{
+    hash_store::HashStore, log_line::LogLine, AsMasked, ColumnInfo, ColumnWidth, DataRows,
+    DataWidths, IndexRows, InputReader, IterDataColumns, LogData, ViewPort,
+};
 
 pub struct CsvData {
-    records: Vec<StringRecord>,
+    records: Vec<LogLine>,
     columns: Vec<ColumnInfo>,
+    hash_db: HashStore<128>,
 }
 
 impl CsvData {
@@ -42,59 +51,70 @@ impl LogData for CsvData {
 
     fn data_widths(&self, viewport: &ViewPort) -> DataWidths<'_> {
         let (first_column_index, skip_in_column) = self.find_start(viewport);
-        DataWidths::from(self.iter_data_columns()
-            .skip(first_column_index)
-            .map(|c| usize::try_from(*c.width()).unwrap())
-            .enumerate()
-            .map(move |(idx, width)| {
-                if idx == 0 {
-                    if width > skip_in_column {
-                        width - skip_in_column
+        DataWidths::from(
+            self.iter_data_columns()
+                .skip(first_column_index)
+                .map(|c| usize::try_from(*c.width()).unwrap())
+                .enumerate()
+                .map(move |(idx, width)| {
+                    if idx == 0 {
+                        if width > skip_in_column {
+                            width - skip_in_column
+                        } else {
+                            0
+                        }
                     } else {
-                        0
+                        width
                     }
-                } else {
-                    width
-                }
-            }))
+                }),
+        )
     }
 
-    fn data_rows(&self, viewport: &ViewPort) -> DataRows<'_> {
+    fn data_rows(&self, viewport: &ViewPort, mask_unicode: bool) -> DataRows<'_> {
+        let reference_hash = self.hash_db.most_probable_hash();
+        let max_distance = Tlsh::max_distance(Default::default()) as f64;
         let (first_column_index, skip_in_column) = self.find_start(viewport);
 
         let upper_bound = usize::min(self.records.len(), viewport.vend());
-        DataRows::from(self.records[viewport.vbegin()..upper_bound]
-            .iter()
-            .map(move |r| {
-                Row::new(
-                    r.iter()
-                        .skip(first_column_index + 1)
-                        .enumerate()
-                        .map(|(idx, value)| {
+        DataRows::from(
+            self.records[viewport.vbegin()..upper_bound]
+                .iter()
+                .map(move |r| {
+                    let row = Row::new(r.iter_contents().skip(first_column_index).enumerate().map(
+                        |(idx, value)| {
                             Cell::new(if idx == 0 {
                                 if skip_in_column >= value.len() {
                                     Line::raw("")
                                 } else {
-                                    value.as_masked(skip_in_column..)
+                                    value.as_masked(skip_in_column.., mask_unicode)
                                 }
                             } else {
-                                value.as_masked(..)
+                                value.as_masked(.., mask_unicode)
                             })
-                        }),
-                )
-            }))
+                        },
+                    ));
+
+                    let distance = r.compare(&reference_hash) as f64;
+                    let p = distance / max_distance;
+                    let color = Color::from_hsl(356.0, 98.0, p * 25.0 + 5.0);
+                    row.bg(color)
+                }),
+        )
     }
 
-    fn index_rows(&self, viewport: &ViewPort) -> IndexRows<'_> {
+    fn index_rows(&self, viewport: &ViewPort, mask_unicode: bool) -> IndexRows<'_> {
         let upper_bound = usize::min(self.records.len(), viewport.vend());
-        IndexRows::from(self.records[viewport.vbegin()..upper_bound]
-            .iter()
-            .map(|r| ListItem::new(r.get(0).unwrap_or_default().as_masked(..))))
+        IndexRows::from(
+            self.records[viewport.vbegin()..upper_bound]
+                .iter()
+                .map(move |r| ListItem::new(r.key_value().as_masked(.., mask_unicode))),
+        )
     }
 
     fn len(&self) -> usize {
         self.records.len()
     }
+
     fn is_empty(&self) -> bool {
         self.records.is_empty()
     }
@@ -115,6 +135,8 @@ impl TryFrom<&ClioPath> for CsvData {
         let mut reader = csv::Reader::from_reader(InputReader::try_from(path)?);
         let mut records = Vec::new();
         let mut columns = Vec::new();
+        let mut hash_db = HashStore::default();
+
         for record in reader.records() {
             let record = record?;
 
@@ -125,7 +147,9 @@ impl TryFrom<&ClioPath> for CsvData {
                     columns[idx].advance_to(s.len());
                 }
             }
-            records.push(record);
+            let line = LogLine::try_from(record)?;
+            hash_db.add_hash(line.fuzzy_hash());
+            records.push(line);
         }
 
         let columns: Vec<_> = columns.into_iter().map(ColumnInfo::new).collect();
@@ -137,7 +161,11 @@ impl TryFrom<&ClioPath> for CsvData {
             }
         }
 
-        Ok(Self { records, columns })
+        Ok(Self {
+            records,
+            columns,
+            hash_db,
+        })
     }
 }
 

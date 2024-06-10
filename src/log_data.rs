@@ -135,8 +135,8 @@ pub trait LogData: Debug {
     fn data_columns(&self) -> usize;
     fn data_infos(&self, idx: usize) -> Option<&ColumnInfo>;
     fn iter_data_columns(&self) -> IterDataColumns<'_>;
-    fn index_rows(&self, viewport: &ViewPort) -> IndexRows<'_>;
-    fn data_rows(&self, viewport: &ViewPort) -> DataRows<'_>;
+    fn index_rows(&self, viewport: &ViewPort, mask_unicode: bool) -> IndexRows<'_>;
+    fn data_rows(&self, viewport: &ViewPort, mask_unicode: bool) -> DataRows<'_>;
 
     fn data_widths<'d>(&'d self, _viewport: &ViewPort) -> DataWidths<'d> {
         DataWidths::from(
