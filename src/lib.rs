@@ -23,8 +23,6 @@ mod log_data;
 mod viewport;
 mod as_masked;
 mod log_line;
-mod line_hash;
-mod hash_store;
 
 pub use csv_data::*;
 pub use txt_data::*;

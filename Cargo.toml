@@ -1,6 +1,6 @@
 [package]
 name = "loghawk"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jan Starke <jan.starke@posteo.de>"]
 license = "GPL-3.0"
 edition = "2021"
@@ -18,7 +18,6 @@ getset = "0.1.2"
 anyhow = "1.0.83"
 csv = "1.3.0"
 encoding_rs = "0.8.34"
-fast-tlsh = "0.1.3"
 
 unicode-segmentation = "1.7.1"
 unicode-width = "0.1.13"

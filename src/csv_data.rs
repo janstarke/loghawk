@@ -1,23 +1,19 @@
 use anyhow::bail;
 use clio::ClioPath;
 use ratatui::{
-    style::{Color, Stylize},
     text::Line,
     widgets::{Cell, ListItem, Row},
 };
 use std::fmt::Debug;
-use tlsh::FuzzyHashType;
-use tlsh::Tlsh;
 
 use crate::{
-    hash_store::HashStore, log_line::LogLine, AsMasked, ColumnInfo, ColumnWidth, DataRows,
+    log_line::LogLine, AsMasked, ColumnInfo, ColumnWidth, DataRows,
     DataWidths, IndexRows, InputReader, IterDataColumns, LogData, ViewPort,
 };
 
 pub struct CsvData {
     records: Vec<LogLine>,
     columns: Vec<ColumnInfo>,
-    hash_db: HashStore<128>,
 }
 
 impl CsvData {
@@ -71,8 +67,6 @@ impl LogData for CsvData {
     }
 
     fn data_rows(&self, viewport: &ViewPort, mask_unicode: bool) -> DataRows<'_> {
-        let reference_hash = self.hash_db.most_probable_hash();
-        let max_distance = Tlsh::max_distance(Default::default()) as f64;
         let (first_column_index, skip_in_column) = self.find_start(viewport);
 
         let upper_bound = usize::min(self.records.len(), viewport.vend());
@@ -80,6 +74,7 @@ impl LogData for CsvData {
             self.records[viewport.vbegin()..upper_bound]
                 .iter()
                 .map(move |r| {
+
                     let row = Row::new(r.iter_contents().skip(first_column_index).enumerate().map(
                         |(idx, value)| {
                             Cell::new(if idx == 0 {
@@ -94,10 +89,7 @@ impl LogData for CsvData {
                         },
                     ));
 
-                    let distance = r.compare(&reference_hash) as f64;
-                    let p = distance / max_distance;
-                    let color = Color::from_hsl(356.0, 98.0, p * 25.0 + 5.0);
-                    row.bg(color)
+                    row
                 }),
         )
     }
@@ -135,7 +127,6 @@ impl TryFrom<&ClioPath> for CsvData {
         let mut reader = csv::Reader::from_reader(InputReader::try_from(path)?);
         let mut records = Vec::new();
         let mut columns = Vec::new();
-        let mut hash_db = HashStore::default();
 
         for record in reader.records() {
             let record = record?;
@@ -148,7 +139,6 @@ impl TryFrom<&ClioPath> for CsvData {
                 }
             }
             let line = LogLine::try_from(record)?;
-            hash_db.add_hash(line.fuzzy_hash());
             records.push(line);
         }
 
@@ -164,7 +154,6 @@ impl TryFrom<&ClioPath> for CsvData {
         Ok(Self {
             records,
             columns,
-            hash_db,
         })
     }
 }
